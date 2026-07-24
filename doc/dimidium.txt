@@ -1,0 +1,224 @@
+*dimidium.txt*                      A Neovim port of the dimidium color scheme
+
+==============================================================================
+CONTENTS                                                    *dimidium-contents*
+
+  1. Introduction ........................... |dimidium-introduction|
+  2. Requirements ........................... |dimidium-requirements|
+  3. Installation ........................... |dimidium-installation|
+  4. Configuration .......................... |dimidium-configuration|
+  5. Palette ................................ |dimidium-palette|
+  6. API .................................... |dimidium-api|
+  7. Supported plugins ...................... |dimidium-plugins|
+  8. Credits and license .................... |dimidium-credits|
+
+==============================================================================
+1. INTRODUCTION                                         *dimidium-introduction*
+
+dimidium.nvim is a Neovim port of dimidium, a terminal color scheme by dofuuz.
+
+    https://github.com/dofuuz/dimidium
+
+The 16 ANSI values are reproduced exactly and published to |g:terminal_color_0|
+through |g:terminal_color_15|, so |:terminal| matches the surrounding terminal
+emulator. The editor palette adjusts two of those values, and derives every UI
+surface from them, so that ordinary code clears the WCAG AA contrast threshold
+(4.5:1) against the `#141414` background. See |dimidium-deviations|.
+
+==============================================================================
+2. REQUIREMENTS                                         *dimidium-requirements*
+
+- Neovim >= 0.9
+- 'termguicolors' enabled
+
+Without 'termguicolors' the scheme still loads, but colors are approximated by
+the terminal and a warning is issued.
+
+==============================================================================
+3. INSTALLATION                                         *dimidium-installation*
+
+With lazy.nvim: >lua
+
+    {
+      '<your-github-username>/dimidium.nvim',
+      lazy = false,
+      priority = 1000,
+      opts = {},
+      config = function(_, opts)
+        require('dimidium').setup(opts)
+        vim.cmd.colorscheme 'dimidium'
+      end,
+    }
+<
+Without a plugin manager, place the repository on your 'runtimepath' and run: >vim
+
+    :colorscheme dimidium
+<
+==============================================================================
+4. CONFIGURATION                                       *dimidium-configuration*
+
+                                                            *dimidium.setup()*
+Calling `setup()` is optional; the scheme loads with the defaults below if it
+is never called. `setup()` only stores options -- apply the scheme afterwards
+with `:colorscheme dimidium`, as is conventional. If dimidium is already the
+active colorscheme, `setup()` re-applies it immediately.
+>lua
+    require('dimidium').setup {
+      transparent = false,
+      dim_inactive = false,
+      terminal_colors = true,
+      styles = {
+        comments = { italic = true },
+        keywords = {},
+        functions = {},
+        types = { bold = true },
+        booleans = {},
+        variables = {},
+      },
+      on_colors = function(colors) end,
+      on_highlights = function(highlights, colors) end,
+    }
+<
+                                                        *dimidium-transparent*
+transparent ~
+    boolean, default `false`. Omit the background on |hl-Normal| and the other
+    editor surfaces so the terminal shows through.
+
+                                                       *dimidium-dim_inactive*
+dim_inactive ~
+    boolean, default `false`. Give windows without focus a darker background
+    via |hl-NormalNC|.
+
+                                                    *dimidium-terminal_colors*
+terminal_colors ~
+    boolean, default `true`. Publish the ANSI palette to `g:terminal_color_*`.
+    The canonical values are used here, never the contrast-corrected ones.
+
+                                                             *dimidium-styles*
+styles ~
+    table. Extra attributes merged into the groups for each role. Each value is
+    a table in the form accepted by |nvim_set_hl()|, for example
+    `{ italic = true }`. Pass an empty table to clear a role: >lua
+
+        require('dimidium').setup { styles = { comments = {} } }
+<
+    Recognised roles: `comments`, `keywords`, `functions`, `types`, `booleans`,
+    `variables`.
+
+                                                          *dimidium-on_colors*
+on_colors({colors}) ~
+    Called with the palette table before highlights are built. Mutate it in
+    place to change a color everywhere it is used: >lua
+
+        require('dimidium').setup {
+          on_colors = function(c)
+            c.bg = '#0f0f0f'
+          end,
+        }
+<
+                                                      *dimidium-on_highlights*
+on_highlights({highlights}, {colors}) ~
+    Called with the complete highlight table before it is applied. Mutate it in
+    place to override individual groups: >lua
+
+        require('dimidium').setup {
+          on_highlights = function(hl, c)
+            hl.Comment = { fg = c.gray6 }
+            hl['@variable.member'] = { fg = c.cyan }
+          end,
+        }
+<
+                                                           *dimidium-lualine*
+LUALINE ~
+
+A lualine theme ships with the plugin: >lua
+
+    require('lualine').setup { options = { theme = 'dimidium' } }
+<
+==============================================================================
+5. PALETTE                                                   *dimidium-palette*
+
+The canonical 16 colors, available as `require('dimidium.palette').ansi`:
+
+    black           #000000     bright_black    #817e7e
+    red             #cf494c     bright_red      #ff643b
+    green           #60b442     bright_green    #37e57b
+    yellow          #db9c11     bright_yellow   #fccd1a
+    blue            #0575d8     bright_blue     #688dfd
+    magenta         #af5ed2     bright_magenta  #ed6fe9
+    cyan            #1db6bb     bright_cyan     #32e0fb
+    white           #bab7b6     bright_white    #dee3e4
+
+Foreground `#bab7b6`, background `#141414`.
+
+The colors actually used for highlighting live in
+`require('dimidium.palette').colors`, together with a neutral ramp `gray1`
+through `gray10` and the derived surfaces `bg_float`, `bg_dim`, `bg_sel`,
+`diff_add`, `diff_change`, `diff_delete` and `diff_text`.
+
+                                                          *dimidium-deviations*
+DEVIATIONS FROM THE TERMINAL PALETTE ~
+
+Two syntax colors differ from their ANSI counterparts, because the originals
+fall below 4.5:1 on `#141414`:
+
+    role    ANSI                    editor
+    red     #cf494c  (4.13:1)       #d95d60  (4.99:1)
+    blue    #0575d8  (3.99:1)       #5286dd  (5.10:1)
+
+`#5286dd` is upstream's own "Link" color, from dofuuz/dimidium issue #2. The
+remaining colors already pass and are used unchanged.
+
+The |hl-Visual| background is mixed from upstream's "Selection BG" (`#8db8e5`)
+at 18% over the background. A lighter selection would drop red and blue to
+roughly 2.1:1 against it.
+
+==============================================================================
+6. API                                                           *dimidium-api*
+
+                                                             *dimidium.load()*
+require('dimidium').load({opts})
+    Apply the colorscheme. {opts} is optional and, when given, is merged into
+    the stored options. Normally you do not call this directly --
+    `:colorscheme dimidium` does it for you.
+
+                                                         *dimidium.terminal()*
+require('dimidium').terminal()
+    Publish the ANSI palette to `g:terminal_color_*`. Called by |dimidium.load()|
+    unless |dimidium-terminal_colors| is disabled.
+
+                                                           *dimidium.report()*
+require('dimidium').report({bg})
+    Return a list of `{ name, hex, ratio }` for every palette color, sorted by
+    WCAG contrast ratio against {bg} (the theme background by default), worst
+    first. Useful when adjusting colors through |dimidium-on_colors|: >vim
+
+        :lua vim.print(require('dimidium').report())
+<
+                                                      *dimidium.highlights.get()*
+require('dimidium.highlights').get({opts})
+    Return the complete highlight table and the resolved palette without
+    applying anything.
+
+==============================================================================
+7. SUPPORTED PLUGINS                                         *dimidium-plugins*
+
+blink.cmp, gitsigns.nvim, snacks.nvim (picker, notifier, dashboard, indent,
+scratch, profiler), oil.nvim, which-key.nvim, todo-comments.nvim,
+indent-blankline.nvim, nvim-dap, nvim-dap-ui, render-markdown.nvim, mini.nvim
+(icons, statusline, starter, surround, indentscope), nvim-treesitter-context,
+telescope.nvim, nvim-notify, lazy.nvim and mason.nvim.
+
+Groups are defined unconditionally, so load order relative to these plugins
+does not matter.
+
+==============================================================================
+8. CREDITS AND LICENSE                                       *dimidium-credits*
+
+The palette is dimidium by dofuuz, https://github.com/dofuuz/dimidium,
+distributed under the zlib license. This port is an altered version and is not
+endorsed by the original author.
+
+The port itself is MIT licensed. See the LICENSE file in the repository root.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
