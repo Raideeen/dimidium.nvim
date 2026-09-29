@@ -81,7 +81,7 @@ local c = M.colors
 
 -- Derived surfaces. Computed rather than hand-picked so that a change to `bg`
 -- or to a syntax color propagates instead of silently drifting out of sync.
-c.bg_float = util.blend(fg, bg, 0.03) -- #181818
+c.bg_float = util.blend(fg, bg, 0.03) -- #191919
 c.bg_dim = util.blend(ansi.black, bg, 0.45) -- inactive windows
 c.bg_sel = util.blend(selection_src, bg, 0.18) -- #2a323a, keeps red/blue >2.9:1
 c.bg_sel_dim = util.blend(selection_src, bg, 0.10)
